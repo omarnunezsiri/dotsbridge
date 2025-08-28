@@ -35,8 +35,35 @@ function Open-DevEnvironment()
 # This attempts to update the local PowerShell profile from the upstream
 function Update-LocalProfile
 {
-    # Placeholder
-    Write-Host "To be implemented..." -ForegroundColor Yellow
+    try
+    {
+        Write-Host "Fetching remote profile script..." -ForegroundColor Yellow
+
+        $tempPath = Join-Path $env:TEMP 'remote_profile.ps1'
+        if (-not $env:REMOTE_PROFILE) { throw "REMOTE_PROFILE environment variable is empty." }
+
+        Invoke-WebRequest -Uri $env:REMOTE_PROFILE -OutFile $tempPath -ErrorAction Stop
+
+        $remoteHash = Get-FileHash -Path $tempPath -Algorithm SHA256
+        $localHash = Get-FileHash -Path $PROFILE  -Algorithm SHA256
+
+        if ($remoteHash.Hash -ne $localHash.Hash)
+        {
+            Write-Host "Remote profile differs. Updating local profile..." -ForegroundColor Yellow
+            Copy-Item -Path $tempPath -Destination $PROFILE -Force
+            Remove-Item -Path $tempPath -Force
+            Write-Host "Local profile updated. Restart PowerShell to apply changes." -ForegroundColor Green
+        }
+        else
+        {
+            Remove-Item -Path $tempPath -Force -ErrorAction SilentlyContinue
+            Write-Host "Local profile is already up to date." -ForegroundColor Green
+        }
+    }
+    catch
+    {
+        Write-Host "Failed to update local profile: $($_.Exception.Message)" -ForegroundColor Red
+    }
 }
 
 # Reloads the powershell profile

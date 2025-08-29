@@ -13,7 +13,7 @@
 # Unix-like sudo
 function sudo 
 { 
-    pwsh -Command Start-Process pwsh -Verb runAs
+    Start-Process wt -Verb runAs
 }
 
 # Unix-like which command
